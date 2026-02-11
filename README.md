@@ -98,10 +98,10 @@ options:
                         maximum FDR for regulated events, above this events fall in
                         "rest" class, is used for rMATS [DEFAULT 0.1]
   -xe [MAXENH], --maxenh [MAXENH]
-                        maximum inclusion for exons to be considered enhanced [DEFAULT
+                        maximum dPSI for exons to be considered enhanced [DEFAULT
                         -0.05]
   -ms [MINSIL], --minsil [MINSIL]
-                        minimum inclusion for exons to be considered silenced [DEFAULT
+                        minimum dPSI for exons to be considered silenced [DEFAULT
                         0.05]
   -v, --multivalency
   -nc, --no_constitutive

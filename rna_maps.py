@@ -164,9 +164,9 @@ def cli():
     optional.add_argument('-xf',"--maxfdr", type=float, default=0.1, nargs='?',
                         help='maximum FDR for regulated events, above this events fall in "rest" class, is used for rMATS [DEFAULT 0.1]')
     optional.add_argument('-xe',"--maxenh", type=float, default=-0.05, nargs='?',
-                        help='maximum inclusion for exons to be considered enhanced [DEFAULT -0.05]')
+                        help='maximum dPSI for exons to be considered enhanced [DEFAULT -0.05]')
     optional.add_argument('-ms',"--minsil", type=float, default=0.05, nargs='?',
-                        help='minimum inclusion for exons to be considered silenced [DEFAULT 0.05]')
+                        help='minimum dPSI for exons to be considered silenced [DEFAULT 0.05]')
     optional.add_argument('-v','--multivalency', action="store_true")
     optional.add_argument('-nc','--no_constitutive', action="store_true", 
                     help='Exclude constitutive category from the output')
