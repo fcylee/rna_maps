@@ -85,7 +85,7 @@ options:
                         [DEFAULT 300]
   -s [SMOOTHING], --smoothing [SMOOTHING]
                         smoothing window for plotting crosslink signal [DEFAULT 15]
-  -s [SMOOTHTYPE], --smoothtype [SMOOTHTYPE]
+  -st [SMOOTHTYPE], --smoothtype [SMOOTHTYPE]
                         smoothing window type for plotting crosslink signal [DEFAULT gaussian]  
   -mc [MINCTRL], --minctrl [MINCTRL]
                         minimum dPSI for control events [DEFAULT -0.05]

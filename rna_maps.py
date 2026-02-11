@@ -161,8 +161,12 @@ def cli():
                         help='maximum dPSI for control events [DEFAULT 0.05]')
     optional.add_argument('-xi',"--maxincl", type=float, default=0.9, nargs='?',
                         help='maximum PSI for control exons, above this limit exons are considered constitutive [DEFAULT 0.9]')
+    optional.add_argument('-mi',"--minincl", type=float, default=0.1, nargs='?',
+                        help='minimum PSI for control exons, below this limit exons are excluded [DEFAULT 0.1]')
     optional.add_argument('-xf',"--maxfdr", type=float, default=0.1, nargs='?',
                         help='maximum FDR for regulated events, above this events fall in "rest" class, is used for rMATS [DEFAULT 0.1]')
+    optional.add_argument('-mf',"--minfdr", type=float, default=0.5, nargs='?',
+                        help='minimum FDR for control events, is used for rMATS [DEFAULT 0.5]')
     optional.add_argument('-xe',"--maxenh", type=float, default=-0.05, nargs='?',
                         help='maximum dPSI for exons to be considered enhanced [DEFAULT -0.05]')
     optional.add_argument('-ms',"--minsil", type=float, default=0.05, nargs='?',
@@ -195,7 +199,9 @@ def cli():
         args.minctrl,
         args.maxctrl,
         args.maxincl,
+        args.minincl,
         args.maxfdr,
+        args.minfdr,
         args.maxenh,
         args.minsil,
         args.multivalency,
@@ -408,7 +414,7 @@ def get_multivalency_scores(df, fai, window, genome_fasta, output_dir, name, typ
     return mdf,top_kmers_df
 
 def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtype, 
-        min_ctrl, max_ctrl, max_inclusion, max_fdr, max_enh, min_sil, output_dir, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix
+        min_ctrl, max_ctrl, max_inclusion, min_inclusion, max_fdr, min_fdr, max_enh, min_sil, output_dir, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix
        #n_exons = 150, n_samples = 300, z_test=False
        ):
     FILEname = prefix + "_" + de_file.split('/')[-1].replace('.txt', '').replace('.gz', '')
@@ -422,10 +428,12 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
         # code below for mean inclusion
         # rmats['inclusion'] = rmats['inclusion'].apply(lambda x: sum([float(y) for y in x if y != 'NA']) / len(x))
         # replaces with max inclusion
-        rmats['inclusion'] = rmats['inclusion'].apply(lambda x: max([float(y) for y in x if y != 'NA']))
-        df_rmats =  rmats.loc[ : ,['chr', 'exonStart_0base', 'exonEnd', 'FDR', 'IncLevelDifference', 'strand', 'inclusion', 
+        rmats['maxinclusion'] = rmats['inclusion'].apply(lambda x: max([float(y) for y in x if y != 'NA']))
+        rmats['mininclusion'] = rmats['inclusion'].apply(lambda x: min([float(y) for y in x if y != 'NA']))
+        df_rmats =  rmats.loc[ : ,['chr', 'exonStart_0base', 'exonEnd', 'FDR', 'IncLevelDifference', 'strand', 
+                                   'maxinclusion', 'mininclusion',
                                    'upstreamES', 'upstreamEE', 'downstreamES', 'downstreamEE']].rename(
-            columns={'IncLevelDifference': 'dPSI', 'inclusion':'maxPSI'}).reset_index()
+            columns={'IncLevelDifference': 'dPSI', 'maxinclusion':'maxPSI', 'mininclusion':'minPSI'}).reset_index()
    
         
         # to deduplicate, first select the most extreme dPSI value for every exon (keep ties, they will be resolved by the hierarchy)
@@ -439,15 +447,15 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
             conditions = [
                 (df_rmats["dPSI"].gt(min_sil) & df_rmats["FDR"].lt(max_fdr)), # silenced
                 (df_rmats["dPSI"].lt(max_enh) & df_rmats["FDR"].lt(max_fdr)), # enhanced
-                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl))# control
+                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl) & df_rmats["FDR"].gt(min_fdr) & df_rmats["maxPSI"].lt(max_inclusion) & df_rmats["minPSI"].gt(min_inclusion)) # control
             ]
             choices = ["silenced", "enhanced", "control"]
         else:
             conditions = [
                 (df_rmats["dPSI"].gt(min_sil) & df_rmats["FDR"].lt(max_fdr)), # silenced
                 (df_rmats["dPSI"].lt(max_enh) & df_rmats["FDR"].lt(max_fdr)), # enhanced
-                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl) & df_rmats["maxPSI"].gt(max_inclusion)), # constituitive
-                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl))# control
+                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl) & df_rmats["FDR"].gt(min_fdr) & df_rmats["minPSI"].gt(max_inclusion)), # constituitive
+                (df_rmats["dPSI"].gt(min_ctrl) & df_rmats["dPSI"].lt(max_ctrl) & df_rmats["FDR"].gt(min_fdr) & df_rmats["maxPSI"].lt(max_inclusion) & df_rmats["minPSI"].gt(min_inclusion)) # control
             ]
             choices = ["silenced", "enhanced", "constituitive", "control"]
 
@@ -1181,7 +1189,9 @@ if __name__=='__main__':
         min_ctrl,
         max_ctrl,
         max_inclusion,
+        min_inclusion,
         max_fdr,
+        min_fdr,
         max_enh,
         min_sil,
         multivalency,
@@ -1197,7 +1207,7 @@ if __name__=='__main__':
 
     try:
         run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtype,
-            min_ctrl, max_ctrl, max_inclusion, max_fdr, max_enh, min_sil, output_folder, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix)
+            min_ctrl, max_ctrl, max_inclusion, min_inclusion, max_fdr, min_fdr, max_enh, min_sil, output_folder, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix)
     finally:
         # Log runtime at the end
         log_runtime(start_time, logger)
