@@ -26,7 +26,7 @@ import time
 
 
 
-def smooth_coverage(df, window_size=10, std=2):
+def smooth_coverage(df, window_size=10, std=2, smooth_type='gaussian'):
     # Create a copy of the dataframe to avoid modifying the original
     result = df.copy()
     
@@ -51,11 +51,16 @@ def smooth_coverage(df, window_size=10, std=2):
             s = pd.Series(values)
             
             # Apply rolling window
-            smoothed = s.rolling(
+            rolling_obj = s.rolling(
                 window=window_size,
                 center=True,
-                win_type='gaussian'
-            ).mean(std=std)
+                win_type=smooth_type
+            )
+            
+            if smooth_type == "gaussian":
+                smoothed = rolling_obj.mean(std=std)
+            else:
+                smoothed = rolling_obj.mean()
             
             # Fill NaN values at the edges with original values
             smoothed = smoothed.fillna(s)
@@ -148,6 +153,8 @@ def cli():
                         help='window around regulated splicing events to plot crosslinks [DEFAULT 300]')
     optional.add_argument('-s',"--smoothing", type=int, default=15, nargs='?',
                         help='smoothing window for plotting crosslink signal [DEFAULT 15]')
+    optional.add_argument('-st',"--smoothtype", type=str, default="gaussian", nargs='?',
+                        help='smoothing window type for plotting crosslink signal [DEFAULT gaussian]')
     optional.add_argument('-mc',"--minctrl", type=float, default=-0.05, nargs='?',
                         help='minimum dPSI for control events [DEFAULT -0.05]')
     optional.add_argument('-xc',"--maxctrl", type=float, default=0.05, nargs='?',
@@ -184,6 +191,7 @@ def cli():
         args.outputpath,
         args.window,
         args.smoothing,
+        args.smoothtype,
         args.minctrl,
         args.maxctrl,
         args.maxincl,
@@ -263,7 +271,10 @@ def get_coverage_plot(xl_bed, df, fai, window, exon_categories, label):
     df_plot['label'] = label
 
     df_plot.loc[df_plot['fold_change'] < 1, ['-log10pvalue']] = df_plot['-log10pvalue'] * -1
-    df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type="gaussian").mean(std=2)
+    if smoothtype == "gaussian":
+        df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
+    else:
+        df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean()
 
     return df_plot, heatmap_plot
 
@@ -396,7 +407,7 @@ def get_multivalency_scores(df, fai, window, genome_fasta, output_dir, name, typ
 
     return mdf,top_kmers_df
 
-def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, 
+def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtype, 
         min_ctrl, max_ctrl, max_inclusion, max_fdr, max_enh, min_sil, output_dir, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix
        #n_exons = 150, n_samples = 300, z_test=False
        ):
@@ -595,7 +606,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing,
             # Step 1: Ensure coverage is binary (0 or 1)
             df = heat_df.copy()
             df['coverage'] = (df['coverage'] > 0).astype(int)
-            df = smooth_coverage(df)
+            df = smooth_coverage(df, smoothing, smooth_type=smoothtype)
             
             if not all_sites:
                 labels = ['upstream_5ss', 'middle_3ss', 'middle_5ss', 'downstream_3ss']
@@ -1165,7 +1176,8 @@ if __name__=='__main__':
         fai,
         output_folder,
         window,
-        smoothing, 
+        smoothing,
+        smoothtype, 
         min_ctrl,
         max_ctrl,
         max_inclusion,
@@ -1184,7 +1196,7 @@ if __name__=='__main__':
     logging.info(f"Log file created: {log_filename}")
 
     try:
-        run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, 
+        run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtype,
             min_ctrl, max_ctrl, max_inclusion, max_fdr, max_enh, min_sil, output_folder, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix)
     finally:
         # Log runtime at the end

@@ -58,10 +58,10 @@ scipy=1.3.1
 ```
 python rna_maps.py -h
 usage: rna_maps.py [-h] -i INPUTSPLICE [-x [INPUTXLSITES]] -f GENOMEFASTA -fi
-                   FASTAINDEX [-o [OUTPUTPATH]] [-w [WINDOW]] [-s [SMOOTHING]]
-                   [-mc [MINCTRL]] [-xc [MAXCTRL]] [-xi [MAXINCL]] [-xf [MAXFDR]]
-                   [-xe [MAXENH]] [-ms [MINSIL]] [-v] [-nc] [-ns] [-ao] [-g [GERMSDIR]]
-                   [-p PREFIX]
+                   FASTAINDEX [-o [OUTPUTPATH]] [-w [WINDOW]] [-s [SMOOTHING]] 
+                   [-st [SMOOTHTYPE]] [-mc [MINCTRL]] [-xc [MAXCTRL]] [-xi [MAXINCL]] 
+                   [-xf [MAXFDR]] [-xe [MAXENH]] [-ms [MINSIL]] [-v] [-nc] [-ns] 
+                   [-ao] [-g [GERMSDIR]] [-p PREFIX]
 
 Plot CLIP crosslinks around regulated exons to study position-dependent impact on pre-
 mRNA splicing.
@@ -85,6 +85,8 @@ options:
                         [DEFAULT 300]
   -s [SMOOTHING], --smoothing [SMOOTHING]
                         smoothing window for plotting crosslink signal [DEFAULT 15]
+  -s [SMOOTHTYPE], --smoothtype [SMOOTHTYPE]
+                        smoothing window type for plotting crosslink signal [DEFAULT gaussian]  
   -mc [MINCTRL], --minctrl [MINCTRL]
                         minimum dPSI for control events [DEFAULT -0.05]
   -xc [MAXCTRL], --maxctrl [MAXCTRL]
