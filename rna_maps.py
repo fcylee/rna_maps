@@ -268,6 +268,7 @@ def get_coverage_plot(xl_bed, df, fai, window, exon_categories, label):
     # give 0 values a small pseudo-count so that fold change can be calculated
     df_plot.loc[df_plot['control_norm_coverage'] == 0, ['control_norm_coverage']] = 0.000001
     df_plot['fold_change'] = df_plot["norm_coverage"] / df_plot["control_norm_coverage"]
+    df_plot['log2fc'] = np.log2(df_plot['fold_change'])
     
     contingency_table = list(zip(df_plot['coverage'], df_plot['number_exons']-df_plot['coverage'], df_plot['control_coverage'], df_plot['control_number_exons'] - df_plot['control_coverage']))
     contingency_table = [ np.array(table).reshape(2,2) for table in contingency_table ]
@@ -276,12 +277,21 @@ def get_coverage_plot(xl_bed, df, fai, window, exon_categories, label):
     df_plot['-log10pvalue'] = np.log10(1/df_plot['pvalue'])
     df_plot['label'] = label
 
+    df_plot['-log10pvalue_enriched'] = df_plot['-log10pvalue']
+    df_plot['-log10pvalue_depleted'] = df_plot['-log10pvalue'] * -1
+    df_plot.loc[df_plot['fold_change'] < 1, ['-log10pvalue_enriched']] = 0
+    df_plot.loc[df_plot['fold_change'] > 1, ['-log10pvalue_depleted']] = 0
     df_plot.loc[df_plot['fold_change'] < 1, ['-log10pvalue']] = df_plot['-log10pvalue'] * -1
+
     if smoothtype == "gaussian":
         df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
+        df_plot['-log10pvalue_enriched_smoothed'] = df_plot['-log10pvalue_enriched'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
+        df_plot['-log10pvalue_depleted_smoothed'] = df_plot['-log10pvalue_depleted'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
     else:
         df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean()
-
+        df_plot['-log10pvalue_enriched_smoothed'] = df_plot['-log10pvalue_enriched'].rolling(smoothing, center=True, win_type=smoothtype).mean()
+        df_plot['-log10pvalue_depleted_smoothed'] = df_plot['-log10pvalue_depleted'].rolling(smoothing, center=True, win_type=smoothtype).mean()
+    
     return df_plot, heatmap_plot
 
 def set_legend_text(legend, exon_categories, original_counts=None):
