@@ -161,8 +161,8 @@ def cli():
                         help='maximum dPSI for control events [DEFAULT 0.05]')
     optional.add_argument('-xi',"--maxincl", type=float, default=0.9, nargs='?',
                         help='maximum PSI for control exons, above this limit exons are considered constitutive [DEFAULT 0.9]')
-    optional.add_argument('-mi',"--minincl", type=float, default=0.1, nargs='?',
-                        help='minimum PSI for control exons, below this limit exons are excluded [DEFAULT 0.1]')
+    optional.add_argument('-mi',"--minincl", type=float, default=0.02, nargs='?',
+                        help='minimum PSI for control exons, below this limit exons are excluded [DEFAULT 0.02]')
     optional.add_argument('-xf',"--maxfdr", type=float, default=0.1, nargs='?',
                         help='maximum FDR for regulated events, above this events fall in "rest" class, is used for rMATS [DEFAULT 0.1]')
     optional.add_argument('-mf',"--minfdr", type=float, default=0.5, nargs='?',
