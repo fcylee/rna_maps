@@ -287,10 +287,12 @@ def get_coverage_plot(xl_bed, df, fai, window, exon_categories, label):
         df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
         df_plot['-log10pvalue_enriched_smoothed'] = df_plot['-log10pvalue_enriched'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
         df_plot['-log10pvalue_depleted_smoothed'] = df_plot['-log10pvalue_depleted'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
+        df_plot['norm_coverage_smoothed'] = df_plot['norm_coverage'].rolling(smoothing, center=True, win_type=smoothtype).mean(std=2)
     else:
         df_plot['-log10pvalue_smoothed'] = df_plot['-log10pvalue'].rolling(smoothing, center=True, win_type=smoothtype).mean()
         df_plot['-log10pvalue_enriched_smoothed'] = df_plot['-log10pvalue_enriched'].rolling(smoothing, center=True, win_type=smoothtype).mean()
         df_plot['-log10pvalue_depleted_smoothed'] = df_plot['-log10pvalue_depleted'].rolling(smoothing, center=True, win_type=smoothtype).mean()
+        df_plot['norm_coverage_smoothed'] = df_plot['norm_coverage'].rolling(smoothing, center=True, win_type=smoothtype).mean()
     
     return df_plot, heatmap_plot
 
@@ -922,6 +924,136 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                     bbox_extra_artists=([leg, rect, marker_ax]),
                     bbox_inches='tight',
                     pad_inches=0.8)
+
+            # LINE GRAPH - enriched
+            sns.set_style("whitegrid")
+            g = sns.relplot(data=plotting_df, x='position', y='-log10pvalue_enriched_smoothed', hue='name', col='label', facet_kws={"sharex":False},
+                        kind='line', col_wrap=col_wrap, height=5, aspect=4/5,
+                        col_order=col_order)
+            for ax, title in zip(g.axes.flat, titles):
+                ax.set_title(title)
+                ax.axhline(y=0, color='k', alpha=0.2, linewidth=0.5)
+            g.set(xlabel='')
+            g.axes[0].set_ylabel('-log10(p value) enriched / control')
+            sns.move_legend(g, "upper right", bbox_to_anchor=(1, 2), ncol=1, title=None, frameon=False)
+            leg = g._legend
+            set_legend_text(leg, exon_categories, original_counts)
+            for i, ss_type in enumerate(col_order):
+                ax = g.axes[i]
+                is_middle = ss_type.startswith('middle_')
+                exon_color = "midnightblue" if is_middle else "slategrey"
+                if ss_type.endswith('_3ss'):
+                    ax.set_xlim([0, window + 50])
+                    ticks = np.arange(0, window + 51, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(1 - rect_fraction, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                else:
+                    ax.set_xlim([window - 50, window * 2])
+                    ticks = np.arange(window - 50, window * 2 + 1, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(rect_fraction, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+            plt.subplots_adjust(wspace=0.05)
+            plt.savefig(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue_enriched.pdf',
+                    bbox_extra_artists=([leg, rect]),
+                    bbox_inches='tight',
+                    pad_inches=0.8)
+
+            # LINE GRAPH - depleted
+            sns.set_style("whitegrid")
+            g = sns.relplot(data=plotting_df, x='position', y='-log10pvalue_depleted_smoothed', hue='name', col='label', facet_kws={"sharex":False},
+                        kind='line', col_wrap=col_wrap, height=5, aspect=4/5,
+                        col_order=col_order)
+            for ax, title in zip(g.axes.flat, titles):
+                ax.set_title(title)
+                ax.axhline(y=0, color='k', alpha=0.2, linewidth=0.5)
+            g.set(xlabel='')
+            g.axes[0].set_ylabel('-log10(p value) depleted / control')
+            sns.move_legend(g, "upper right", bbox_to_anchor=(1, 2), ncol=1, title=None, frameon=False)
+            leg = g._legend
+            set_legend_text(leg, exon_categories, original_counts)
+            for i, ss_type in enumerate(col_order):
+                ax = g.axes[i]
+                is_middle = ss_type.startswith('middle_')
+                exon_color = "midnightblue" if is_middle else "slategrey"
+                if ss_type.endswith('_3ss'):
+                    ax.set_xlim([0, window + 50])
+                    ticks = np.arange(0, window + 51, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(1 - rect_fraction, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                else:
+                    ax.set_xlim([window - 50, window * 2])
+                    ticks = np.arange(window - 50, window * 2 + 1, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(rect_fraction, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+            plt.subplots_adjust(wspace=0.05)
+            plt.savefig(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue_depleted.pdf',
+                    bbox_extra_artists=([leg, rect]),
+                    bbox_inches='tight',
+                    pad_inches=0.8)
+
+            # LINE GRAPH - normalised coverage
+            sns.set_style("whitegrid")
+            g = sns.relplot(data=plotting_df, x='position', y='norm_coverage_smoothed', hue='name', col='label', facet_kws={"sharex":False},
+                        kind='line', col_wrap=col_wrap, height=5, aspect=4/5,
+                        col_order=col_order)
+            for ax, title in zip(g.axes.flat, titles):
+                ax.set_title(title)
+                ax.axhline(y=0, color='k', alpha=0.2, linewidth=0.5)
+            g.set(xlabel='')
+            g.axes[0].set_ylabel('Normalised coverage')
+            sns.move_legend(g, "upper right", bbox_to_anchor=(1, 2), ncol=1, title=None, frameon=False)
+            leg = g._legend
+            set_legend_text(leg, exon_categories, original_counts)
+            for i, ss_type in enumerate(col_order):
+                ax = g.axes[i]
+                is_middle = ss_type.startswith('middle_')
+                exon_color = "midnightblue" if is_middle else "slategrey"
+                if ss_type.endswith('_3ss'):
+                    ax.set_xlim([0, window + 50])
+                    ticks = np.arange(0, window + 51, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(1 - rect_fraction, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                else:
+                    ax.set_xlim([window - 50, window * 2])
+                    ticks = np.arange(window - 50, window * 2 + 1, 50)
+                    labels = ["" if t in (ticks[0], ticks[-1]) else str(int(t - window)) for t in ticks]
+                    ax.set_xticks(ticks)
+                    ax.set_xticklabels(labels)
+                    rect = matplotlib.patches.Rectangle(xy=(0, -0.2), width=rect_fraction, height=.1, color=exon_color, alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+                    rect = matplotlib.patches.Rectangle(xy=(rect_fraction, -0.15), width=1 - rect_fraction, height=.001, color="slategrey", alpha=1, transform=ax.transAxes, clip_on=False)
+                    ax.add_artist(rect)
+            plt.subplots_adjust(wspace=0.05)
+            plt.savefig(f'{output_dir}/{FILEname}_RNAmap_norm_coverage.pdf',
+                    bbox_extra_artists=([leg, rect]),
+                    bbox_inches='tight',
+                    pad_inches=0.8)
+
             pbt.helpers.cleanup()
 
         if multivalency:
