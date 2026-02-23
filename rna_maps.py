@@ -151,10 +151,10 @@ def cli():
                         help='output folder [DEFAULT current directory]')
     optional.add_argument('-w',"--window", type=int, default=300, nargs='?',
                         help='window around regulated splicing events to plot crosslinks [DEFAULT 300]')
-    optional.add_argument('-s',"--smoothing", type=int, default=15, nargs='?',
-                        help='smoothing window for plotting crosslink signal [DEFAULT 15]')
-    optional.add_argument('-st',"--smoothtype", type=str, default="gaussian", nargs='?',
-                        help='smoothing window type for plotting crosslink signal [DEFAULT gaussian]')
+    optional.add_argument('-s',"--smoothing", type=int, default=30, nargs='?',
+                        help='smoothing window for plotting crosslink signal [DEFAULT 30] (was 15)')
+    optional.add_argument('-st',"--smoothtype", type=str, default="triang", nargs='?',
+                        help='smoothing window type for plotting crosslink signal [DEFAULT triang] (was gaussian)')
     optional.add_argument('-mc',"--minctrl", type=float, default=-0.05, nargs='?',
                         help='minimum dPSI for control events [DEFAULT -0.05]')
     optional.add_argument('-xc',"--maxctrl", type=float, default=0.05, nargs='?',

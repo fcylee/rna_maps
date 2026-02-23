@@ -64,12 +64,13 @@ usage: rna_maps.py [-h] -i INPUTSPLICE [-x [INPUTXLSITES]] -f GENOMEFASTA -fi
                    [-xe [MAXENH]] [-ms [MINSIL]] [-v] [-nc] [-ns] [-ao]
                    [-g [GERMSDIR]] [-p PREFIX]
 
-Plot CLIP crosslinks around regulated exons to study position-dependent impact on
-pre-mRNA splicing.
+Plot CLIP crosslinks around regulated exons to study position-dependent impact
+on pre-mRNA splicing.
 
 required arguments:
   -i INPUTSPLICE, --inputsplice INPUTSPLICE
-                        quantification of differential splicing produced by rMATS
+                        quantification of differential splicing produced by
+                        rMATS
   -f GENOMEFASTA, --genomefasta GENOMEFASTA
                         genome fasta file (.fa)
   -fi FASTAINDEX, --fastaindex FASTAINDEX
@@ -86,20 +87,20 @@ options:
                         crosslinks [DEFAULT 300]
   -s [SMOOTHING], --smoothing [SMOOTHING]
                         smoothing window for plotting crosslink signal [DEFAULT
-                        15]
+                        30] (was 15)
   -st [SMOOTHTYPE], --smoothtype [SMOOTHTYPE]
                         smoothing window type for plotting crosslink signal
-                        [DEFAULT gaussian]
+                        [DEFAULT triang] (was gaussian)
   -mc [MINCTRL], --minctrl [MINCTRL]
                         minimum dPSI for control events [DEFAULT -0.05]
   -xc [MAXCTRL], --maxctrl [MAXCTRL]
                         maximum dPSI for control events [DEFAULT 0.05]
   -xi [MAXINCL], --maxincl [MAXINCL]
-                        maximum PSI for control exons, above this limit exons are
-                        considered constitutive [DEFAULT 0.9]
+                        maximum PSI for control exons, above this limit exons
+                        are considered constitutive [DEFAULT 0.9]
   -mi [MININCL], --minincl [MININCL]
-                        minimum PSI for control exons, below this limit exons are
-                        excluded [DEFAULT 0.02]
+                        minimum PSI for control exons, below this limit exons
+                        are excluded [DEFAULT 0.02]
   -xf [MAXFDR], --maxfdr [MAXFDR]
                         maximum FDR for regulated events, above this events fall
                         in "rest" class, is used for rMATS [DEFAULT 0.1]
@@ -107,22 +108,22 @@ options:
                         minimum FDR for control events, is used for rMATS
                         [DEFAULT 0.5]
   -xe [MAXENH], --maxenh [MAXENH]
-                        maximum dPSI for exons to be considered enhanced [DEFAULT
-                        -0.05]
+                        maximum dPSI for exons to be considered enhanced
+                        [DEFAULT -0.05]
   -ms [MINSIL], --minsil [MINSIL]
-                        minimum dPSI for exons to be considered silenced [DEFAULT
-                        0.05]
+                        minimum dPSI for exons to be considered silenced
+                        [DEFAULT 0.05]
   -v, --multivalency
   -nc, --no_constitutive
                         Exclude constitutive category from the output
-  -ns, --no_subset      Disable subsetting of control/constitutive exons to match
-                        enhanced/silenced counts
+  -ns, --no_subset      Disable subsetting of control/constitutive exons to
+                        match enhanced/silenced counts
   -ao, --all_sites      Include all splice sites (upstream_3ss and
                         downstream_5ss), default is core sites only
   -g [GERMSDIR], --germsdir [GERMSDIR]
                         directory for where to find germs.R for multivalency
-                        analysis eg. /Users/Bellinda/repos/germs [DEFAULT current
-                        directory]
+                        analysis eg. /Users/Bellinda/repos/germs [DEFAULT
+                        current directory]
   -p PREFIX, --prefix PREFIX
                         prefix for output files [DEFAULT inputsplice file name]
 ```
