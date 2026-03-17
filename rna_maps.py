@@ -569,8 +569,8 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
 
         ####### Intron lengths #######
         logging.info("Computing intron lengths...")
-        df_rmats["first_intron_length"] = df_rmats['upstreamEE'] - df_rmats['exonStart_0base']
-        df_rmats["second_intron_length"] = df_rmats['exonEnd'] - df_rmats['downstreamES']
+        df_rmats["first_intron_length"] = df_rmats['exonStart_0base'] - df_rmats['upstreamEE']
+        df_rmats["second_intron_length"] = df_rmats['downstreamES'] - df_rmats['exonEnd']
         df_rmats.loc[df_rmats.strand=='+', 'upstream_intron_length'] =  df_rmats["first_intron_length"]
         df_rmats.loc[df_rmats.strand=='-', 'upstream_intron_length'] =  df_rmats["second_intron_length"]
         df_rmats.loc[df_rmats.strand=='+', 'downstream_intron_length'] =  df_rmats["second_intron_length"]
