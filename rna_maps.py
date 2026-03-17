@@ -567,6 +567,36 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
         plt.savefig(f'{output_dir}/{FILEname}_exon_length.pdf')
         pbt.helpers.cleanup()
 
+        ####### Intron lengths #######
+        df_rmats["first_intron_length"] = df_rmats['upstreamEE'] - df_rmats['exonStart_0base']
+        df_rmats["second_intron_length"] = df_rmats['exonEnd'] - df_rmats['downstreamES']
+        df_rmats.loc[df_rmats.strand=='+', 'upstream_intron_length'] =  df_rmats["first_intron_length"]
+        df_rmats.loc[df_rmats.strand=='-', 'upstream_intron_length'] =  df_rmats["second_intron_length"]
+        df_rmats.loc[df_rmats.strand=='+', 'downstream_intron_length'] =  df_rmats["second_intron_length"]
+        df_rmats.loc[df_rmats.strand=='-', 'downstream_intron_length'] =  df_rmats["first_intron_length"]
+
+        intron_length_df = df_rmats[["upstream_intron_length","downstream_intron_length","category"]]
+
+        intron_length_df = intron_length_df .melt(id_vars=["category"], var_name="intron_type", value_name="intron_length")
+        
+        palette_intron_len = palette_exon_len # can use the same palette for intron lengths
+
+        sns.set(rc={'figure.figsize':(10, 5)})
+        sns.set_style("whitegrid")
+        g = sns.catplot(data=intron_length_df, x='category', y='intron_length',col='intron_type', 
+                    kind='box', col_wrap=2, showfliers=False,
+                    col_order=["upstream_intron_length","downstream_intron_length"],
+                    order=["control","constituitive","enhanced","enhanced_rest","silenced","silenced_rest"],
+                    palette = palette_intron_len, hue='category', legend=False)
+        titles = ["Upstream Intron", "Downstream Intron"]
+        for ax, title in zip(g.axes.flat, titles):
+            ax.set_title(title)
+        g.set_xticklabels(rotation=45)
+        g.set(xlabel=None)
+        g.axes[0].set_ylabel('Intron length (bp)')
+        plt.tight_layout()
+        plt.savefig(f'{output_dir}/{FILEname}_intron_length.pdf')
+        pbt.helpers.cleanup()
 
         ### The coverage plot ###
 
