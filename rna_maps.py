@@ -185,8 +185,6 @@ def cli():
     parser._action_groups.append(optional)
     args = parser.parse_args()
 
-    logging.info(args)
-
     return(
         args.inputsplice,
         args.inputxlsites,
@@ -417,8 +415,8 @@ def get_multivalency_scores(df, fai, window, genome_fasta, output_dir, name, typ
     mdf['type'] = type
     top_kmers_df['type'] = type
 
-    print(mdf.head())
-    print(top_kmers_df.head())
+    logging.info("Multivalency scores dataframe head:\n" + str(mdf.head()))
+    logging.info("Top kmers dataframe head:\n" + str(top_kmers_df.head()))
 
     # mdf = mdf.loc[(mdf.label != ".") & (pd.notnull(mdf.label)) & (mdf.label != "None")]
     # top_kmers_df = top_kmers_df.loc[(top_kmers_df.label != ".") & (pd.notnull(top_kmers_df.label)) & (top_kmers_df.label != "None")]
@@ -535,6 +533,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
         exon_categories = df_rmats.groupby('category').size()
 
         ####### Exon lengths #######
+        logging.info("Computing exon lengths...")
         df_rmats["regulated_exon_length"] = df_rmats['exonEnd'] - df_rmats['exonStart_0base']
         df_rmats["first_exon_length"] = df_rmats['upstreamEE'] - df_rmats['upstreamES']
         df_rmats["second_exon_length"] = df_rmats['downstreamEE'] - df_rmats['downstreamES']
@@ -565,9 +564,11 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
         g.axes[0].set_ylabel('Exon length (bp)')
         plt.tight_layout()
         plt.savefig(f'{output_dir}/{FILEname}_exon_length.pdf')
+        logging.info(f'{output_dir}/{FILEname}_exon_length.pdf saved successfully')
         pbt.helpers.cleanup()
 
         ####### Intron lengths #######
+        logging.info("Computing intron lengths...")
         df_rmats["first_intron_length"] = df_rmats['upstreamEE'] - df_rmats['exonStart_0base']
         df_rmats["second_intron_length"] = df_rmats['exonEnd'] - df_rmats['downstreamES']
         df_rmats.loc[df_rmats.strand=='+', 'upstream_intron_length'] =  df_rmats["first_intron_length"]
@@ -596,6 +597,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
         g.axes[0].set_ylabel('Intron length (bp)')
         plt.tight_layout()
         plt.savefig(f'{output_dir}/{FILEname}_intron_length.pdf')
+        logging.info(f'{output_dir}/{FILEname}_intron_length.pdf saved successfully')
         pbt.helpers.cleanup()
 
         ### The coverage plot ###
@@ -609,13 +611,20 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
             upstream_3ss_bed = get_ss_bed(df_rmats,'upstreamES','downstreamEE')
 
         if xl_bed is not None:
+            logging.info("Starting CLIP coverage computation (" + str(len(df_rmats)) + " exons)...")
             middle_3ss = get_coverage_plot(xl_bed, middle_3ss_bed, fai, window, exon_categories, 'middle_3ss')
+            logging.info("Coverage computed: middle 3'SS")
             middle_5ss = get_coverage_plot(xl_bed, middle_5ss_bed, fai, window, exon_categories, 'middle_5ss')
+            logging.info("Coverage computed: middle 5'SS")
             downstream_3ss = get_coverage_plot(xl_bed, downstream_3ss_bed, fai, window, exon_categories, 'downstream_3ss')
+            logging.info("Coverage computed: downstream 3'SS")
             upstream_5ss = get_coverage_plot(xl_bed, upstream_5ss_bed, fai, window, exon_categories, 'upstream_5ss')
+            logging.info("Coverage computed: upstream 5'SS")
             if all_sites:
                 downstream_5ss = get_coverage_plot(xl_bed, downstream_5ss_bed, fai, window, exon_categories, 'downstream_5ss')
+                logging.info("Coverage computed: downstream 5'SS")
                 upstream_3ss = get_coverage_plot(xl_bed, upstream_3ss_bed, fai, window, exon_categories, 'upstream_3ss')
+                logging.info("Coverage computed: upstream 3'SS")
 
             linegraph_middle_3ss = middle_3ss[0]
             linegraph_middle_5ss = middle_5ss[0]
@@ -639,6 +648,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                 heat_df = pd.concat([heatmap_middle_3ss, heatmap_middle_5ss, heatmap_downstream_3ss, heatmap_downstream_5ss, heatmap_upstream_3ss, heatmap_upstream_5ss])
 
             plotting_df.to_csv(f'{output_dir}/{FILEname}_RNAmap.tsv', sep="\t")
+            logging.info(f'{output_dir}/{FILEname}_RNAmap.tsv written to file successfully')
 
             # Making an output table with total exons covered in each region and category
             # Step 1: Group by exon_id, label, and name, then sum the coverage
@@ -655,8 +665,10 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
             exon_categories_df.columns = ['name', 'total_exons_after_subsetting']
             final_heat_df = final_heat_df.merge(exon_categories_df, on='name', how='left')
             final_heat_df.to_csv(f'{output_dir}/{FILEname}_totalExonsCovered.tsv', sep="\t", index=False)
+            logging.info(f'{output_dir}/{FILEname}_totalExonsCovered.tsv written to file successfully')
 
             # Step 1: Ensure coverage is binary (0 or 1)
+            logging.info("Processing heatmap data: binarising coverage and applying smoothing...")
             df = heat_df.copy()
             df['coverage'] = (df['coverage'] > 0).astype(int)
             df = smooth_coverage(df, smoothing, smooth_type=smoothtype)
@@ -685,7 +697,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                 label_df = df[df['label'] == label]
                 # Skip if no data for this label
                 if len(label_df) == 0:
-                    print(f"No data for label: {label}")
+                    logging.warning("No data for label: " + label + ", skipping heatmap panel")
                     continue
                     
                 # Create pivot table for this label - keep exon_id as index
@@ -709,7 +721,8 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                     first = False
                 else:
                     common_exons = common_exons.union(set(pivot.index))
-                
+            logging.info("Heatmap data ready: " + str(len(common_exons)) + " exons with signal across " + str(len(label_data)) + " regions")
+
             # Step 7: Get names and total signal for common exons
             # Create DataFrame with exon_id and total_signal - keep exon_id as index
             exon_info = exon_totals.set_index('exon_id').loc[list(common_exons)]
@@ -724,6 +737,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
             sorted_exon_ids = exon_info.index.tolist()
                 
             # Step 9: Set up the figure
+            logging.info("Rendering heatmap figure (" + str(len(sorted_exon_ids)) + " exons x " + str(len(labels)) + " regions)...")
             width = max(15, len(labels) * 4)
             height = max(3, len(sorted_exon_ids) * 0.002)
             figsize = (width, height)
@@ -858,9 +872,10 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                 
             # Save the figure if requested
             plt.savefig(f'{output_dir}/{FILEname}_heatmap.pdf', dpi=300, bbox_inches='tight')
-
+            logging.info(f'{output_dir}/{FILEname}_heatmap.pdf saved successfully')
 
             # LINE GRAPH
+            logging.info("Rendering RNA map line graphs...")
             #sns.set(rc={'figure.figsize':(7, 5)})
             sns.set_style("whitegrid")
 
@@ -950,10 +965,11 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
 
             # Adjust subplot spacing and save with enough room for legend and arrows
             plt.subplots_adjust(wspace=0.05)  
-            plt.savefig(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue.pdf', 
+            plt.savefig(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue.pdf',
                     bbox_extra_artists=([leg, rect, marker_ax]),
                     bbox_inches='tight',
                     pad_inches=0.8)
+            logging.info(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue.pdf saved successfully')
 
             # LINE GRAPH - enriched
             sns.set_style("whitegrid")
@@ -997,6 +1013,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                     bbox_extra_artists=([leg, rect]),
                     bbox_inches='tight',
                     pad_inches=0.8)
+            logging.info(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue_enriched.pdf saved successfully')
 
             # LINE GRAPH - depleted
             sns.set_style("whitegrid")
@@ -1040,6 +1057,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                     bbox_extra_artists=([leg, rect]),
                     bbox_inches='tight',
                     pad_inches=0.8)
+            logging.info(f'{output_dir}/{FILEname}_RNAmap_-log10pvalue_depleted.pdf saved successfully')
 
             # LINE GRAPH - normalised coverage
             sns.set_style("whitegrid")
@@ -1083,6 +1101,7 @@ def run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtyp
                     bbox_extra_artists=([leg, rect]),
                     bbox_inches='tight',
                     pad_inches=0.8)
+            logging.info(f'{output_dir}/{FILEname}_RNAmap_norm_coverage.pdf saved successfully')
 
             pbt.helpers.cleanup()
 
@@ -1379,10 +1398,14 @@ if __name__=='__main__':
     
     log_filename, start_time, logger = setup_logging(output_folder)
     logging.info(f"Log file created: {log_filename}")
+    logging.info(f"Arguments: de_file={de_file}, xl_bed={xl_bed}, genome_fasta={genome_fasta}, fai={fai}, output_folder={output_folder}, window={window}, smoothing={smoothing}, smoothtype={smoothtype}, min_ctrl={min_ctrl}, max_ctrl={max_ctrl}, max_inclusion={max_inclusion}, min_inclusion={min_inclusion}, max_fdr={max_fdr}, min_fdr={min_fdr}, max_enh={max_enh}, min_sil={min_sil}, multivalency={multivalency}, no_constitutive={no_constitutive}, no_subset={no_subset}, all_sites={all_sites}, prefix={prefix}")
 
     try:
         run_rna_map(de_file, xl_bed, genome_fasta, fai, window, smoothing, smoothtype,
             min_ctrl, max_ctrl, max_inclusion, min_inclusion, max_fdr, min_fdr, max_enh, min_sil, output_folder, multivalency, germsdir, no_constitutive, no_subset, all_sites, prefix)
+    except Exception as e:
+        logging.exception("Script failed with an unhandled exception: " + str(e))
+        raise
     finally:
         # Log runtime at the end
         log_runtime(start_time, logger)
